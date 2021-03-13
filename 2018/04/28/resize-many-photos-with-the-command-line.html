@@ -1,0 +1,143 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>Resize many images with the command line | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="Resize many images with the command line" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2018/04/28/resize-many-photos-with-the-command-line.html" />
+        <meta property="og:url" content="http://czarnota.io/2018/04/28/resize-many-photos-with-the-command-line.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2018/04/28/resize-many-photos-with-the-command-line.html">Resize many images with the command line</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2018/04/28</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>bash</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>Often you need to resize many images to, for example, place them on your website. To do it, you don’t have to open every image in Free Trial version of Photoshop or Gimp. You also don’t need to install bloated apps like Batch Image Resizer Pro™, Enterprise Resizer Ultra™ or YetAnotherResizer®, that you will want get rid off just after you’re done with the job.</p>
+<p>You can use <a href="https://www.imagemagick.org/">ImageMagick®</a>, which is a proven and powerful tool for manipulating images from the command line.</p>
+<h2 id="prerequisities">Prerequisities</h2>
+<p>First, you need to install <a href="https://www.imagemagick.org/">ImageMagick®</a>. This is just one line. Here is how to do it on various linux distros:</p>
+<p>Ubuntu/Debian</p>
+<pre class="console"><code>$ sudo apt install imagemagick</code></pre>
+<p>Fedora/CentOS</p>
+<pre class="console"><code>$ sudo yum install imagemagick</code></pre>
+<p>Arch Linux</p>
+<pre class="console"><code>$ sudo pacman -S imagemagick</code></pre>
+<p>For other linux distributions, please refer to the internet.</p>
+<h2 id="do-it">Do it</h2>
+<ol class="incremental" type="1">
+<li>Navigate to the directory, where your images are located</li>
+</ol>
+<pre class="console"><code>$ cd images</code></pre>
+<ol class="incremental" start="2" type="1">
+<li>Execute this awesome one-liner to resize all images:</li>
+</ol>
+<pre class="console"><code>$ ls | xargs -n1 -I{} -d&#39;\n&#39; convert {} -resize 500x500 resized-{}</code></pre>
+<p>Done! You didn’t even have to take your hands off the keyboard.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>Let’s take a closer look at this complex looking one-liner. The first part is simple - it lists directories. So, for example, after you entered <code>images</code> directory and executed <code>ls</code> in it, you may see the following list of directories.</p>
+<pre class="console"><code>$ ls
+a.jpg b.jpg c.jpg d.jpg</code></pre>
+<p>Next, the standard output of <code>ls</code> is redirected using <code>|</code> operator to <code>xargs</code>. But, what does <code>xargs</code> do?</p>
+<p>To put it simply, <code>xargs</code> reads words from standard input and passes them as arguments to a given command. For example:</p>
+<pre class="console"><code>$ echo a b c | xargs rm</code></pre>
+<p>Would have the same effect as:</p>
+<pre class="console"><code>$ rm a b c</code></pre>
+<p>You can limit the number of arguments passed to a single command invocation by passing <code>-n</code> switch to <code>xargs</code>, so that executing:</p>
+<pre class="console"><code>$ echo a b c | xargs -n 1 rm</code></pre>
+<p>Would become an equivalent of the following series of commands:</p>
+<pre class="console"><code>$ rm a
+$ rm b
+$ rm c</code></pre>
+<p>There is also the another important bit of <code>xargs</code> command. It is when you not neccessarily want to place the arguments at the end of the command. You can control where <code>xargs</code> puts arguments using <code>-I</code> option. The argument to <code>-I</code> option is the string that will be replaced with the arguments read from stdin.</p>
+<p>Example:</p>
+<pre class="console"><code>$ echo a b c | xargs -n1 -I{} echo foo {} bar
+foo a bar
+foo b bar
+foo c bar</code></pre>
+<p>Next comes the <code>convert</code> command, which is provided by ImageMagic. It is used to perform various operations on images, like resizing, converting formats or applying filters. Here is how you can resize the image with it:</p>
+<pre><code>$ convert input.jpg -resize 128x128 output.jpg</code></pre>
+<p>The <code>input.jpg</code> will be resized to 128px width and 128px height and save to <code>output.jpg</code>.</p>
+<p>Now, you’ve seen all the important bits. Let’s put them together again.</p>
+<pre class="console"><code>$ ls | xargs -n1 -I{} convert {} -resize 500x500 resized-{}</code></pre>
+<p>The list of files printed to stdout is redirected to <code>xargs</code>, which will execute <code>convert</code> command for each filename. Before every invocation of the <code>convert</code> command , <code>xargs</code> will replace <code>{}</code> with a filename.</p>
+<h2 id="summary">Summary</h2>
+<p>ImageMagick is a very versatile tool for manipulating images from command line. If you want to know more about it, check out the <a href="https://www.imagemagick.org/">official website</a>.</p>
+<p>Also <code>xargs</code> is a very useful utility when it comes to shell scripting. It is good to know more about it, you can learn more from the <a href="http://man7.org/linux/man-pages/man1/xargs.1.html">manual</a></p></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                <div>Next post</div>
+<a href=/2018/06/29/references-in-bash.html>References in Bash</a>
+                </div>
+                <div class="next-post">
+                <div>Previous post</div>
+<a href=/2018/04/20/the-oddities-of-variable-assignment-syntax.html>The oddities of the variable assignment syntax</a>
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2018/04/28/resize-many-photos-with-the-command-line.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>

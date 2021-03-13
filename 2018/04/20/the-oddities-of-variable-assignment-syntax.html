@@ -1,0 +1,146 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>The oddities of the variable assignment syntax | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="The oddities of the variable assignment syntax" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2018/04/20/the-oddities-of-variable-assignment-syntax.html" />
+        <meta property="og:url" content="http://czarnota.io/2018/04/20/the-oddities-of-variable-assignment-syntax.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2018/04/20/the-oddities-of-variable-assignment-syntax.html">The oddities of the variable assignment syntax</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2018/04/05</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>bash</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>The variable assignment in bash may seem straightforward at the first glance, but there exist a few counter-intuitive pitfalls. If you have ever felt like “why can’t I have whitespace in here?!” or “bash is insane!”, then this article is for you. Once you know the rules behind the syntax of variable assignment in bash, you will see that it actually makes a lot of sense.</p>
+<h2 id="how-to-assign-variables-in-bash">How to assign variables in bash?</h2>
+<p>The variable assignment looks just like in any other programming language.</p>
+<pre class="console"><code>$ MY_VARIABLE=myvalue</code></pre>
+<p>Here the string value <code>"myvalue"</code> is assigned to the variable named <code>MY_VARIABLE</code>. If you want to get the value of a variable, you can use the <code>$</code> operator. This is called a <strong>parameter expansion</strong>.</p>
+<pre class="console"><code>$ echo ${MY_VARIABLE}
+myvalue
+$ echo $MY_VARIABLE #simplified syntax
+myvalue</code></pre>
+<h2 id="beware-of-whitespace-surrounding">Beware of whitespace surrounding =</h2>
+<p>So, this is how you assign variables:</p>
+<pre class="console"><code>$ A=B</code></pre>
+<p>Here the string value <code>"B"</code> will be assigned to variable named <code>A</code>. If you are new to bash (e.g. coming from C, Python or other programming language), then you may want to include some whitespace to make this assignment more readable.</p>
+<pre class="console"><code>$ A = B</code></pre>
+<p>It was one of the first mistakes that I used to make. What is going to happen here? Let’s see.</p>
+<pre class="console"><code>$ A = B
+A: unknown command</code></pre>
+<p>This is not a syntax error. It doesn’t work, because it is not interpreted as variable assignment syntax. It is interpreted as a simple command, which is defined in bash the following way: &gt;It’s a sequence of words separated by blanks. &gt;The first word generally specifies a command to be executed, with the rest of the words being that command’s arguments.</p>
+<p>Bash will attempt to execute a command <code>A</code> with <code>=</code> given as first argument and <code>B</code> as the second.</p>
+<p>Let’s consider another example</p>
+<pre class="console"><code>$ A= B
+B: unknown command</code></pre>
+<p>This is another trap that you can fall into just by making a typo. The error is again not a syntax error, but this time <code>B</code> is intepreted as a command. Why?</p>
+<p>Turns out that bash will interpret <code>A=</code> as a variable assignment preceding the command name. Such assignments only affect the environment of the executed command. For example if you wanted to open a <code>man</code> for <code>ls</code> program, but you wanted to use a <code>more</code> pager you could execute the following command:</p>
+<pre class="console"><code>$ MANPAGER=more man ls</code></pre>
+<p>This has almost the same effect as:</p>
+<pre class="console"><code>$ export MANPAGES=more
+$ man ls</code></pre>
+<p>With the exception that the former example would only affect the environment of a <code>man</code> process and the latter would affect the environment of current bash session.</p>
+<p>So in this example:</p>
+<pre class="console"><code>$ A= B
+B: unknown command</code></pre>
+<p>Bash would attempt to execute <code>B</code> command with variable <code>A</code> in its environment, which would be set to an empty value.</p>
+<h2 id="strings-should-be-quoted">Strings should be quoted</h2>
+<p>In previous examples of assignments you could see that string values don’t have to be quoted. There are cases where quotes are neccessary. For example:</p>
+<pre class="console"><code>$ caption=hello my friend</code></pre>
+<p>From previous examples you can learn that here bash would attempt to execute <code>my</code> program with word <code>friend</code> given as a first argument and with <code>caption</code> variable set to <code>"hello"</code> value in its environment. You can enclose the string with quotes or escape whitespace characters with <code>\</code> character:</p>
+<pre class="console"><code>$ caption=&quot;hello my friend&quot;
+$ caption=hello\ my\ friend</code></pre>
+<h2 id="variables-dont-have-to-be-quoted">Variables don’t have to be quoted</h2>
+<p>Another interesting example concerns the feature called <strong>word splitting</strong>. In bash the world splitting occurs during parameter expansion when variable isn’t quoted:</p>
+<pre class="console"><code>$ hello=&quot;mkdir foo&quot;
+$ $hello #will call &#39;mkdir&#39; with &#39;foo&#39; as a first argument
+$ &quot;$hello&quot; #will try call &#39;mkdir foo&#39; program
+mkdir foo: unknown command</code></pre>
+<p>So when performing the following assignment:</p>
+<pre class="console"><code>$ foo=&quot;a b&quot;
+$ bar=$foo</code></pre>
+<p>You may think that it would result in:</p>
+<pre class="console"><code>$ bar=a b</code></pre>
+<p>Which is calling <code>b</code> command with <code>bar=a</code> in its environment. This is not the case, however. Turns out that bash doesn’t perform word splitting when it comes to variable assignment. So this results in:</p>
+<pre class="console"><code>$ bar=&quot;a b&quot;</code></pre>
+<p>Did you expect it? I didn’t.</p>
+<h2 id="summary">Summary</h2>
+<p>There are few surprises when it comes to variable assignment, but once you know what is the reasoning behind they are not that surprising.</p></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                <div>Next post</div>
+<a href=/2018/04/28/resize-many-photos-with-the-command-line.html>Resize many images with the command line</a>
+                </div>
+                <div class="next-post">
+                &nbsp;
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2018/04/20/the-oddities-of-variable-assignment-syntax.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>

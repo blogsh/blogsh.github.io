@@ -1,0 +1,150 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>Implementing a dynamic array in a single line of code | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="Implementing a dynamic array in a single line of code" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2019/02/12/implementing-dynamic-array-in-one-line-of-code.html" />
+        <meta property="og:url" content="http://czarnota.io/2019/02/12/implementing-dynamic-array-in-one-line-of-code.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2019/02/12/implementing-dynamic-array-in-one-line-of-code.html">Implementing a dynamic array in a single line of code</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2019/02/12</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>c</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>The C standard library does not provide an implementation of any data structure so if you need a dynamic array or a linked list you must provide your own implementation. The simplest implementation of a single linked list just requires to add a pointer to the next element in the target structure, that is why it is often chosen by developers instead of a dynamic array. A simple implementation of a dynamic array is also possible and can be done in one line of code.</p>
+<h2 id="dynamic-array">Dynamic array</h2>
+<p>The dynamic array is an array that grows or shrinks if elements are added or removed. Typically implementation must store 3 attributes: - pointer to the allocated data - size of the array - capacity of the array</p>
+<figure>
+<img src="/assets/implementing-dynamic-array-in-one-line-of-code/size-vs-capacity.svg" alt="size-vs-capacity" /><figcaption>size-vs-capacity</figcaption>
+</figure>
+<p>If size gets closer to capacity, then the array is reallocated with a bigger capacity (usually 2 or 1.5 times larger) and all elements are copied into the new array.</p>
+<figure>
+<img src="/assets/implementing-dynamic-array-in-one-line-of-code/size-vs-capacity2.svg" alt="size-vs-capacity2" /><figcaption>size-vs-capacity2</figcaption>
+</figure>
+<figure>
+<img src="/assets/implementing-dynamic-array-in-one-line-of-code/size-vs-capacity3.svg" alt="size-vs-capacity3" /><figcaption>size-vs-capacity3</figcaption>
+</figure>
+<h2 id="one-line-implementation">One line implementation</h2>
+<p>Our simple implementation will just consist of a <code>grow()</code> function which we will call after adding each element into the array in order to resize it if needed.</p>
+<p>To allocate a new array and copy all previous elements we will use <code>realloc()</code>.</p>
+<p>We can simplify the implementation by making an assumption that <code>capacity</code> is next power of two, greater than <code>size</code>. This way we won’t need to store the capacity. For example:</p>
+<pre><code>if size is 3 then capacity is 4
+if size is 8 then capacity is 16
+if size is 3000 then capacity is 4096</code></pre>
+<p>We only need to check if size is a power of two, then we shall allocate the new array of a double size. To check if the size is a power of two we can use the following trick:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb2-1" title="1">(size - <span class="dv">1</span>) &amp; size</a></code></pre></div>
+<p>Thanks to this, grow operation can be implemented in just one line of code.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb3-1" title="1"><span class="dt">void</span> *grow(<span class="dt">void</span> *ptr, <span class="dt">unsigned</span> <span class="dt">int</span> size, <span class="dt">unsigned</span> <span class="dt">int</span> elemsize)</a>
+<a class="sourceLine" id="cb3-2" title="2">{</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="cf">return</span> (size - <span class="dv">1</span>) &amp; size ? ptr : realloc(ptr, <span class="dv">2</span> * size * elemsize);</a>
+<a class="sourceLine" id="cb3-4" title="4">}</a></code></pre></div>
+<h2 id="usage">Usage</h2>
+<p>Example usage (error checking omitted):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb4-1" title="1"><span class="co">/* start with size of zero and capacity of one */</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="dt">int</span> *numbers = malloc(<span class="kw">sizeof</span>(*numbers));</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="dt">unsigned</span> <span class="dt">int</span> size = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="dt">int</span> i = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="co">/* add one element to the end */</span></a>
+<a class="sourceLine" id="cb4-7" title="7">numbers[size++] = <span class="dv">1</span>;</a>
+<a class="sourceLine" id="cb4-8" title="8">numbers = grow(numbers, size, <span class="kw">sizeof</span>(*numbers));</a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="co">/* add 100 elements to the end*/</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="cf">for</span> (i = <span class="dv">0</span>; i &lt; <span class="dv">100</span>; ++i) {</a>
+<a class="sourceLine" id="cb4-12" title="12">    numbers[size++] = i;</a>
+<a class="sourceLine" id="cb4-13" title="13">    numbers = grow(numbers, size, <span class="kw">sizeof</span>(*numbers));</a>
+<a class="sourceLine" id="cb4-14" title="14">}</a>
+<a class="sourceLine" id="cb4-15" title="15"></a>
+<a class="sourceLine" id="cb4-16" title="16"><span class="co">/* iterate over all elements */</span></a>
+<a class="sourceLine" id="cb4-17" title="17"><span class="cf">for</span> (i = <span class="dv">0</span>; i &lt; size; ++i)</a>
+<a class="sourceLine" id="cb4-18" title="18">    printf(<span class="st">&quot;%d</span><span class="sc">\n</span><span class="st">&quot;</span>, numbers[i]);</a>
+<a class="sourceLine" id="cb4-19" title="19"></a>
+<a class="sourceLine" id="cb4-20" title="20"><span class="co">/* remove last 80 elements */</span></a>
+<a class="sourceLine" id="cb4-21" title="21">size -= <span class="dv">80</span>;</a>
+<a class="sourceLine" id="cb4-22" title="22"></a>
+<a class="sourceLine" id="cb4-23" title="23"><span class="co">/* add an element again */</span></a>
+<a class="sourceLine" id="cb4-24" title="24">numbers[size++] = <span class="dv">99</span>;</a>
+<a class="sourceLine" id="cb4-25" title="25">numbers = grow(numbers, size, <span class="kw">sizeof</span>(*numbers));</a>
+<a class="sourceLine" id="cb4-26" title="26"></a>
+<a class="sourceLine" id="cb4-27" title="27">free(numbers);</a></code></pre></div>
+<h2 id="limitations">Limitations</h2>
+<p>Although this approach is quite simple it has some issues, one of which is that repeated adding and removing elements when <code>size = 2^k + 1</code> causes an allocation that is simply unneccassary. If size is <code>65</code> (capacity is <code>128</code>) and we remove one element by simply decrementing the size by one (size is <code>64</code>) and add an element again followed by a call to <code>grow()</code>, then we will make an allocation for <code>128</code> elements again. The <code>realloc()</code> <strong>may</strong> be optimized <a href="https://www.gnu.org/software/libc/manual/html_node/Changing-Block-Size.html">not to do a reallocation of the same size</a>, nevertheless in serious applications you should use a more robust implementation of a dynamic array.</p></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                <div>Next post</div>
+<a href=/2020/01/09/multiline-strings-in-bash-the-cool-way.html>Multiline strings in Bash - the cool way</a>
+                </div>
+                <div class="next-post">
+                <div>Previous post</div>
+<a href=/2019/02/10/hello-world-with-autotools.html>Hello world with Autotools</a>
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2019/02/12/implementing-dynamic-array-in-one-line-of-code.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>

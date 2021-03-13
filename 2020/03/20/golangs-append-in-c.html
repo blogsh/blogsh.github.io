@@ -1,0 +1,171 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>Porting Golang's append function to C | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="Porting Golang's append function to C" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2020/03/20/golangs-append-in-c.html" />
+        <meta property="og:url" content="http://czarnota.io/2020/03/20/golangs-append-in-c.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2020/03/20/golangs-append-in-c.html">Porting Golang's append function to C</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2020/03/21</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>c</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>One of the things that caught my eye when I was experimenting with the <code>Go</code> language was the <code>append()</code> function.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">func</span> <span class="bu">append</span>(s []T, vs ...T) []T</a></code></pre></div>
+<p>Example usage:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode go"><code class="sourceCode go"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">func</span> main() {</a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="kw">var</span> s []<span class="dt">int</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">    s = <span class="bu">append</span>(s, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb2-5" title="5">    s = <span class="bu">append</span>(s, <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-6" title="6">    s = <span class="bu">append</span>(s, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb2-7" title="7">}</a></code></pre></div>
+<p>The <code>append()</code> function adds an element into a slice, and if the backing array of the slice is not large enough, it will be reallocated with a bigger size. This works exactly like <code>std::vector::push_back()</code> in <code>C++</code>.</p>
+<p>What I generally like about the <code>Go</code>’s approach to the dynamic array is that it is minimalistic. You have one function and that’s it.</p>
+<p>The minimalism is one of the top reasons that made <code>C</code> language so popular and successful, especially in the world of embedded systems. Unfortunately this minimalism, which makes <code>C</code> easy to port to almost any platform comes with a cost of having <strong>zero</strong> data structures built into the language or the standard library.</p>
+<p>One of the most useful data structures is definitely the dynamic array and there are many libraries out there providing its implementation, but in my personal projects I prefer to quickly port <code>Go</code>’s <code>append()</code> function to <code>C</code>.</p>
+<h2 id="append-in-c">Append in C</h2>
+<p>The <code>C</code>’s version of <code>append()</code> is not as neat as in <code>Go</code> because we have to explicitly pass the capacity and the length, but the implementation consists of just a few lines of code.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb3-1" title="1"><span class="pp">#define INITIAL_CAPACITY 2</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="pp">#define GROWTH_FACTOR 2</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="dt">void</span>* append(<span class="dt">void</span> *array,</a>
+<a class="sourceLine" id="cb3-4" title="4">             <span class="dt">unsigned</span> <span class="dt">int</span> *cap,</a>
+<a class="sourceLine" id="cb3-5" title="5">             <span class="dt">unsigned</span> <span class="dt">int</span> *len,</a>
+<a class="sourceLine" id="cb3-6" title="6">             <span class="dt">const</span> <span class="dt">void</span> *item,</a>
+<a class="sourceLine" id="cb3-7" title="7">             <span class="dt">unsigned</span> <span class="dt">int</span> size)</a>
+<a class="sourceLine" id="cb3-8" title="8">{</a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="dt">unsigned</span> <span class="dt">int</span> capacity = *cap;</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="cf">if</span> (*len == capacity) {</a>
+<a class="sourceLine" id="cb3-12" title="12">        capacity = capacity ? capacity * GROWTH_FACTOR : INITIAL_CAPACITY;</a>
+<a class="sourceLine" id="cb3-13" title="13"></a>
+<a class="sourceLine" id="cb3-14" title="14">        array = realloc(array, capacity * size);</a>
+<a class="sourceLine" id="cb3-15" title="15">        <span class="cf">if</span> (!array) {</a>
+<a class="sourceLine" id="cb3-16" title="16">            <span class="co">/* Here you should handle Out of memory condition,</span></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="co">               in some cases exit(1) is really all you need, but</span></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="co">               it all depends on your use case. In more critical</span></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="co">               applications you may return NULL here to let the</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="co">               caller recover. */</span></a>
+<a class="sourceLine" id="cb3-21" title="21">            exit(<span class="dv">1</span>);</a>
+<a class="sourceLine" id="cb3-22" title="22">        }</a>
+<a class="sourceLine" id="cb3-23" title="23">        *cap = capacity;</a>
+<a class="sourceLine" id="cb3-24" title="24">    }</a>
+<a class="sourceLine" id="cb3-25" title="25"></a>
+<a class="sourceLine" id="cb3-26" title="26">    memcpy((<span class="dt">unsigned</span> <span class="dt">char</span> *)*array + *len * size, item, size);</a>
+<a class="sourceLine" id="cb3-27" title="27">    *len += <span class="dv">1</span>;</a>
+<a class="sourceLine" id="cb3-28" title="28"></a>
+<a class="sourceLine" id="cb3-29" title="29">    <span class="cf">return</span> array;</a>
+<a class="sourceLine" id="cb3-30" title="30">}</a></code></pre></div>
+<p>Usage</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">struct</span> item {</a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="dt">int</span> x;</a>
+<a class="sourceLine" id="cb4-3" title="3">};</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv)</a>
+<a class="sourceLine" id="cb4-6" title="6">{</a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="kw">struct</span> item item;</a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="dt">unsigned</span> <span class="dt">long</span> i = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="co">/* We need 3 variables - pointer to the beginning of the array,</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="co">       length and capacity (this is not as cool as in Go, where this is hidden</span></a>
+<a class="sourceLine" id="cb4-12" title="12"><span class="co">       behind the scenes) */</span></a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="kw">struct</span> item *items = NULL; <span class="co">/* realloc(NULL, size) acts as malloc(size)*/</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    <span class="dt">unsigned</span> <span class="dt">int</span> items_len = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="dt">unsigned</span> <span class="dt">int</span> items_cap = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb4-16" title="16"></a>
+<a class="sourceLine" id="cb4-17" title="17">    item.x = <span class="dv">1</span>;</a>
+<a class="sourceLine" id="cb4-18" title="18">    items = append(items, &amp;items_len, &amp;items_cap, &amp;item, <span class="kw">sizeof</span> item);</a>
+<a class="sourceLine" id="cb4-19" title="19">    item.x = <span class="dv">2</span>;</a>
+<a class="sourceLine" id="cb4-20" title="20">    items = append(items, &amp;items_len, &amp;items_cap, &amp;item, <span class="kw">sizeof</span> item);</a>
+<a class="sourceLine" id="cb4-21" title="21">    item.x = <span class="dv">3</span>;</a>
+<a class="sourceLine" id="cb4-22" title="22">    items = append(items, &amp;items_len, &amp;items_cap, &amp;item, <span class="kw">sizeof</span> item);</a>
+<a class="sourceLine" id="cb4-23" title="23">    item.x = <span class="dv">4</span>;</a>
+<a class="sourceLine" id="cb4-24" title="24">    items = append(items, &amp;items_len, &amp;items_cap, &amp;item, <span class="kw">sizeof</span> item);</a>
+<a class="sourceLine" id="cb4-25" title="25"></a>
+<a class="sourceLine" id="cb4-26" title="26">    <span class="cf">for</span> (i = <span class="dv">0</span>; i &lt; items_len; ++i)</a>
+<a class="sourceLine" id="cb4-27" title="27">        printf(<span class="st">&quot;%d&quot;</span>, items[i].x);</a>
+<a class="sourceLine" id="cb4-28" title="28"></a>
+<a class="sourceLine" id="cb4-29" title="29">    free(items);</a>
+<a class="sourceLine" id="cb4-30" title="30"></a>
+<a class="sourceLine" id="cb4-31" title="31">    <span class="cf">return</span> <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb4-32" title="32">}</a></code></pre></div></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                <div>Next post</div>
+<a href=/2020/03/21/subcommands-in-bash-scripts.html>Subcommands in Bash scripts</a>
+                </div>
+                <div class="next-post">
+                <div>Previous post</div>
+<a href=/2020/01/14/copying-files-from-remote-locations-using-clipboard.html>Copying files from a remote location using the clipboard</a>
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2020/03/20/golangs-append-in-c.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>

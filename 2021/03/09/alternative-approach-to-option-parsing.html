@@ -1,0 +1,225 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>Alternative approach to option parsing | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="Alternative approach to option parsing" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2021/03/09/alternative-approach-to-option-parsing.html" />
+        <meta property="og:url" content="http://czarnota.io/2021/03/09/alternative-approach-to-option-parsing.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2021/03/09/alternative-approach-to-option-parsing.html">Alternative approach to option parsing</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2021/03/09</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>bash</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>Some time ago I posted about a declarative approach to the implementation of subcommand parsing in Bash scripts. Turns out, that this approach can be extended to also support long (like <code>--long</code>) and short (like <code>-s</code>) option parsing.</p>
+<h2 id="main-function-and-multiple-entry-points">Main function and multiple entry points</h2>
+<p>In my <a href="/2020/03/21/subcommands-in-bash-scripts.html">previous post</a> about parsing subcommands, the idea for declarative subcommands was this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">    <span class="bu">shift</span> <span class="co"># get rid of &quot;foo&quot; from arguments</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="ex">code_here</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="fu">bar ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="bu">shift</span> <span class="co"># get rid of &quot;bar&quot; from arguments</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="ex">code_here</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="fu">main ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="co"># shift not needed because it is a main entry point</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="ex">code_here</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="bu">declare</span> -A <span class="va">COMMANDS=(</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    [<span class="ex">foo</span>]=foo</a>
+<a class="sourceLine" id="cb1-16" title="16">    [<span class="ex">bar</span>]=bar</a>
+<a class="sourceLine" id="cb1-17" title="17">    [<span class="ex">main</span>]=main</a>
+<a class="sourceLine" id="cb1-18" title="18">)</a>
+<a class="sourceLine" id="cb1-19" title="19"></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="co"># Try ${COMMANDS[$1]} first</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="co"># If $1 is not defined then try ${COMMANDS[main]}</span></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="co"># If $1 is defined, but ${COMMANDS[$1]} does not exist, then try ${COMMANDS[main]}</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="co"># Finally, pass all arguments to selected entry point</span></a>
+<a class="sourceLine" id="cb1-24" title="24"><span class="st">&quot;</span><span class="va">${COMMANDS[</span><span class="st">&quot;</span><span class="va">${1-</span>main<span class="va">}</span><span class="st">&quot;</span><span class="va">]:-${COMMANDS[main]}}</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a></code></pre></div>
+<p>This way, if we invoke <code>./script foo X Y Z</code>, it will invoke <code>foo()</code> function and the arguments are going to be <code>X Y Z</code> (the same goes for <code>bar</code> subcommand). If we invoke <code>./script X Y Z</code> it will invoke <code>main()</code> function (default entry point) and the arguments going to be <code>X Y Z</code>. This approach to subcommand parsing can be also utilized for option parsing.</p>
+<h2 id="option-parsing">Option parsing</h2>
+<p>We can implement option parsing by extending the approach to argument parsing in a few steps.</p>
+<h3 id="step-one">Step one:</h3>
+<p>Wrap the argument parsing one-liner into a function (let’s call it <code>argparse</code>)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="fu">argparse ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="st">&quot;</span><span class="va">${COMMANDS[</span><span class="st">&quot;</span><span class="va">${1-</span>main<span class="va">}</span><span class="st">&quot;</span><span class="va">]:-${COMMANDS[main]}}</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="ex">argparse</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a></code></pre></div>
+<p>We are doing this, because we will be invoking the “argument parsing one-liner” multiple times, so that we can parse multiple options.</p>
+<h3 id="step-two">Step two</h3>
+<p>Add script options to <code>COMMANDS</code> associative array.</p>
+<p>As an example we will add two options: - <code>--long ARG</code> - long option, which accepts a single mandatory argument - <code>-s ARG</code> - show option, which accepts a single mandatory argument</p>
+<p>Here is the <code>COMMANDS</code> array after the changes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="bu">declare</span> -A <span class="va">COMMANDS=(</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    [<span class="ex">foo</span>]=foo</a>
+<a class="sourceLine" id="cb3-3" title="3">    [<span class="ex">bar</span>]=bar</a>
+<a class="sourceLine" id="cb3-4" title="4">    [<span class="ex">main</span>]=main</a>
+<a class="sourceLine" id="cb3-5" title="5">    [<span class="ex">--long</span>]=set_value</a>
+<a class="sourceLine" id="cb3-6" title="6">    [<span class="ex">-s</span>]=set_value</a>
+<a class="sourceLine" id="cb3-7" title="7">)</a></code></pre></div>
+<p>So what is <code>set_value</code>? It is a name of the function, which does two things:</p>
+<ol class="incremental" type="1">
+<li>Parses an option</li>
+<li>Runs <code>argparse</code> again</li>
+</ol>
+<p>This function can be implemented like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1"><span class="fu">set_value ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">     <span class="bu">local</span> <span class="va">OPT_</span><span class="dt">{</span><span class="va">$1</span><span class="dt">//-/}</span><span class="va">=</span><span class="st">&quot;</span><span class="va">$2</span><span class="st">&quot;</span> <span class="co"># Remove hyphens, as they are not valid variable names</span></a>
+<a class="sourceLine" id="cb4-3" title="3">     <span class="bu">shift</span> 2 <span class="kw">||</span> <span class="kw">{</span> <span class="bu">echo</span> <span class="st">&quot;err: </span><span class="va">$1</span><span class="st"> requires an argument&quot;</span> <span class="op">1&gt;&amp;2</span><span class="kw">;</span> <span class="bu">return</span> 1<span class="kw">;</span> <span class="kw">}</span></a>
+<a class="sourceLine" id="cb4-4" title="4">     <span class="ex">argparse</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span> <span class="co"># Run &#39;argparse()&#39; for remaining arguments</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">}</span></a></code></pre></div>
+<p>Function <code>set_value()</code> will parse an option, and run <code>argparse()</code> again, which will parse next option or call <code>${COMMANDS[main]}</code> if there are no more options to parse or if an option does not exist.</p>
+<p>Then in the <code>main()</code> function (which is connected to “main” entry point) we can access script options using <code>$OPT_{option_name}</code> variables.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="fu">main ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">     <span class="bu">echo</span> <span class="va">$OPT_long</span></a>
+<a class="sourceLine" id="cb5-3" title="3">     <span class="bu">echo</span> <span class="va">$OPT_s</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">}</span></a></code></pre></div>
+<pre class="console"><code>$ ./script --long hello -s world
+hello
+world</code></pre>
+<h1 id="support-for-flag-options">Support for “flag” options</h1>
+<p>Some options can act as simple on/off switches. We can implement those using <code>set_true</code> function, which can be implemented as a simple wrapper for <code>set_value</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="fu">set_true ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    <span class="ex">set_value</span> <span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span> true</a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="bu">declare</span> -A <span class="va">COMMANDS=(</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    [<span class="ex">foo</span>]=foo</a>
+<a class="sourceLine" id="cb8-3" title="3">    [<span class="ex">bar</span>]=bar</a>
+<a class="sourceLine" id="cb8-4" title="4">    [<span class="ex">main</span>]=main</a>
+<a class="sourceLine" id="cb8-5" title="5">    [<span class="ex">--long</span>]=set_value</a>
+<a class="sourceLine" id="cb8-6" title="6">    [<span class="ex">-s</span>]=set_value</a>
+<a class="sourceLine" id="cb8-7" title="7">    [<span class="ex">--switch</span>]=set_true</a>
+<a class="sourceLine" id="cb8-8" title="8">)</a></code></pre></div>
+<p>Then we can pass <code>--switch</code> option without arguments and it will be set to <code>true</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="fu">main ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">     <span class="bu">echo</span> <span class="va">$OPT_switch</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">}</span></a></code></pre></div>
+<pre class="console"><code>$ ./script --switch
+true</code></pre>
+<p>All of this works great, but has one potential problem. Currently our option parsing works only for the “main entry point”. If we wanted to pass these options to specific subcommands it wouldn’t work.</p>
+<p>Here is an example that will not work:</p>
+<pre class="console"><code>$ ./script foo --long hello</code></pre>
+<p>In the above example we will invoke <code>foo</code> entry point and stop argument parsing. However if we specify <code>--long</code> option before the <code>foo</code>, then it will be parsed and the <code>foo()</code> function will be executed with <code>$OPT_long</code> set to <code>hello</code>.</p>
+<pre><code>./script --long hello foo</code></pre>
+<p>But is this really a problem? I think this makes perfect sense. The <code>--long</code> option is a “top level” option for the script, and it affects the entire program.</p>
+<p>But nevertheless, what if we wanted to implement option parsing for a specific subcommand? In other words, what if we wanted to make this work:</p>
+<pre class="console"><code>$ ./script foo --long hello</code></pre>
+<p>Turns out, there is a way.</p>
+<h1 id="different-set-of-options-for-subcommands">Different set of options for subcommands</h1>
+<p>We will add option parsing to one of our entry points. Let’s take <code>foo</code> entry point as an example. The first thing we need to do is to wrap <code>foo()</code> in a function, which we will call <code>foo_parser()</code></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" title="1"><span class="fu">foo_parser ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">    <span class="ex">foo</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="kw">}</span></a></code></pre></div>
+<p>And instead of calling <code>foo()</code> when <code>foo</code> subcommand is selected we will call <code>foo_parser()</code></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb15-1" title="1"><span class="bu">declare</span> -A <span class="va">COMMANDS=(</span></a>
+<a class="sourceLine" id="cb15-2" title="2">    [<span class="ex">foo</span>]=foo_parser <span class="co"># Just call foo_parser() instead of foo()</span></a>
+<a class="sourceLine" id="cb15-3" title="3">    [<span class="ex">bar</span>]=bar</a>
+<a class="sourceLine" id="cb15-4" title="4">    [<span class="ex">main</span>]=main</a>
+<a class="sourceLine" id="cb15-5" title="5">    [<span class="ex">--long</span>]=set_value</a>
+<a class="sourceLine" id="cb15-6" title="6">    [<span class="ex">-s</span>]=set_value</a>
+<a class="sourceLine" id="cb15-7" title="7">    [<span class="ex">--switch</span>]=set_true</a>
+<a class="sourceLine" id="cb15-8" title="8">)</a></code></pre></div>
+<p>Now in the <code>foo_parser()</code>, let’s not call <code>foo()</code> directly. Instead overwrite <code>COMMANDS</code> array and call <code>foo()</code> through <code>argparse()</code>. This allows us to handle options specific for <code>foo</code> entry point.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb16-1" title="1"><span class="fu">foo_parser ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">    <span class="bu">shift</span></a>
+<a class="sourceLine" id="cb16-3" title="3">    <span class="bu">declare</span> -A <span class="va">COMMANDS=(</span></a>
+<a class="sourceLine" id="cb16-4" title="4">         [<span class="ex">main</span>]=foo</a>
+<a class="sourceLine" id="cb16-5" title="5">         [<span class="ex">--long</span>]=set_value</a>
+<a class="sourceLine" id="cb16-6" title="6">    )</a>
+<a class="sourceLine" id="cb16-7" title="7">    <span class="ex">argparse</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb16-8" title="8"><span class="kw">}</span></a></code></pre></div>
+<p>After the changes, this is supported:</p>
+<pre><code>$ ./script foo --long hello</code></pre>
+<p>Just one little detail - since <code>foo()</code> is called as a <code>main</code> entry point in <code>foo_parser()</code>, then we no longer need to <code>shift</code> its name from the arguments.</p>
+<p>So originally, the <code>foo</code> entry point used a <code>shift</code> to get rid of its name from arguments</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb18-1" title="1"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb18-2" title="2">    <span class="bu">shift</span> <span class="co"># get rid of &quot;foo&quot; from arguments</span></a>
+<a class="sourceLine" id="cb18-3" title="3">    <span class="ex">code_here</span></a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="kw">}</span></a></code></pre></div>
+<p>But now, it is not needed.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb19-1" title="1"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb19-2" title="2">     <span class="ex">code_here</span></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="kw">}</span></a></code></pre></div>
+<h1 id="summary">Summary</h1>
+<p>Usually option and argument parsing is implemented using <code>while</code> loop combined with <code>case</code> statement. Using an associative array and an “argument parsing one-liner”, we can implement argument and option parsing in a declarative way.</p></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                &nbsp;
+                </div>
+                <div class="next-post">
+                <div>Previous post</div>
+<a href=/2020/10/25/circular-list-in-a-few-lines-of-code.html>Circular doubly linked list in just a few lines of code</a>
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2021/03/09/alternative-approach-to-option-parsing.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>
