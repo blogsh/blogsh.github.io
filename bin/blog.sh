@@ -113,34 +113,6 @@ render_post () {
 ____EOF
 }
 
-render_disquss () {
-    cat <<____EOF
-  <div id="disqus_thread"></div>
-  <script>
-    $(
-        if [[ $PRODUCTION != true ]]; then
-            echo "var disqus_developer = 1;"
-        fi
-    )
-
-    var disqus_config = function () {
-      this.page.url = "${PAGE[absolute_url]}";
-      this.page.identifier = "${PAGE[absolute_url]}";
-    };
-
-    (function() {
-      var d = document, s = d.createElement('script');
-
-      s.src = 'https://czarnota.disqus.com/embed.js';
-
-      s.setAttribute('data-timestamp', +new Date());
-      (d.head || d.body).appendChild(s);
-    })();
-  </script>
-  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
-____EOF
-}
-
 with_layout_default () {
     cat <<____EOF
     <!DOCTYPE html>
@@ -288,6 +260,7 @@ render_archives () {
     with_layout_default <<____EOF
         <div class="wrapper">
             <h1 class="all-posts-h">blog.sh</h1>
+            <span class="all-posts-about">A public domain blog about Bash</span>
             <ul class="all-posts">
                 $(
                     for i in ${page_numbers[@]}; do
@@ -303,11 +276,10 @@ ____EOF
 render_about () {
     with_layout_default <<____EOF
         <div class="about wrapper">
-        <h1>blog.sh</h1>
-
-        <p>
-        A public domain blog about Bash, no copyright, no strings attached.
-        </p>
+        <h1 class="all-posts-h">blog.sh</h1>
+        <span class="all-posts-about">
+        A public domain blog about Bash
+        </span>
 
         <p>
         This blog is Uncopyrighted. Its authors, have released all claims on copyright and has put all the content of this blog into the public domain.
