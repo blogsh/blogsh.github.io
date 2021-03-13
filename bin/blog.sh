@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PAGE_HTTP_URL="http://czarnota.io"
+PAGE_HTTP_URL="http://blogsh.github.io"
 
 ENOENT=2
 
@@ -155,26 +155,26 @@ with_layout_default () {
 
         $(
             if [[ -z ${PAGE[title]} ]]; then
-                echo "<title>Czarnota | Interesting things about software engineering</title>"
+                echo "<title>Blog.sh | A public domain blog about Bash</title>"
             else
-                echo "<title>${PAGE[title]} | Czarnota</title>"
+                echo "<title>${PAGE[title]} | Blog.sh</title>"
             fi
         )
 
         <meta name="generator" content="blog.sh" />
-        <meta property="og:title" content="${PAGE[title]:-Czarnota}" />
+        <meta property="og:title" content="${PAGE[title]:-Blog.sh}" />
         <meta property="og:locale" content="en_US" />
 
-        <meta name="description" content="${page[description]:-Interesting things about software engineering}" />
-        <meta property="og:description" content="${page[description]:-Interesting things about software engineering}" />
+        <meta name="description" content="${page[description]:-A public domain blog about Bash}" />
+        <meta property="og:description" content="${page[description]:-A public domain blog about Bash}" />
 
         <link rel="canonical" href="${PAGE[absolute_url]}" />
         <meta property="og:url" content="${PAGE[absolute_url]}" />
 
-        <meta property="og:site_name" content="Czarnota" />
-        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <meta property="og:site_name" content="Blog.sh" />
+        <link rel="next" href="http://blogsh.github.io/page/2/index.html" />
         <script type="application/ld+json">
-        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+        {"@type":"WebSite","url":"http://blogsh.github.io/","headline":"Blog.sh","description":"A public domain blog about Bash","name":"Blog.sh","@context":"http://schema.org"}</script>
           <link rel="stylesheet" href="/assets/main.css">
          <link rel="icon" type="image/png" href="/assets/favicon.ico">
       </head>
@@ -377,8 +377,7 @@ main () {
 
     echo "blog.sh: blog.sh - static site generator written in Bash"
     echo "blog.sh: Version 0.1.0"
-    echo "blog.sh: Copyright (C) 2020 by P. Czarnota <p@czarnota.io>"
-    echo "blog.sh: Licensed under GNU GPL version 3"
+    echo "blog.sh: Uncopyrighted. Public domain."
     echo -n "blog.sh: Transforming posts"
     local i=0;
 
