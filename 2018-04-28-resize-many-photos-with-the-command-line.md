@@ -3,7 +3,7 @@ layout: post
 title:  "Resize many images with the command line"
 date:   2018-04-28 17:00:07 +0100
 image: /assets/resize-many-photos-with-the-command-line.jpg
-comments: true
+author: czarnota
 image_pos: center center
 tags:
   - bash

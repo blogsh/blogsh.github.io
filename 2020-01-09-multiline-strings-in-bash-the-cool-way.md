@@ -2,7 +2,7 @@
 layout: post
 title:  "Multiline strings in Bash - the cool way"
 date:   2020-01-09 12:07:19 +0100
-comments: true
+author: czarnota
 tags:
   - bash
 ---

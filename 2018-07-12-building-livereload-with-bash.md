@@ -3,7 +3,7 @@ layout: post
 title:  "Building a LiveReload with bash"
 date:   2018-07-12 17:00:00 +0100
 image: /assets/building-livereload-with-bash.png
-comments: true
+author: czarnota
 image_pos: center center
 tags:
   - bash

@@ -2,7 +2,7 @@
 layout: post
 title:  "Subcommands in Bash scripts"
 date:   2020-03-26 11:26:00 +0100
-comments: true
+author: czarnota
 tags:
   - bash
 ---

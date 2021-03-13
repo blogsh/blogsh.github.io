@@ -3,7 +3,7 @@ layout: post
 title:  "The oddities of the variable assignment syntax"
 date:   2018-04-05 17:20:07 +0100
 image: /assets/the-oddities-of-variable-assignment-syntax.jpg
-comments: true
+author: czarnota
 image_pos: center left
 tags:
   - bash

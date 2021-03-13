@@ -2,7 +2,7 @@
 layout: post
 title:  "Copying files from a remote location using the clipboard"
 date:   2020-01-14 23:30:00 +0100
-comments: true
+author: czarnota
 tags:
   - bash
 ---

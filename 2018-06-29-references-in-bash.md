@@ -3,7 +3,7 @@ layout: post
 title:  "References in Bash"
 date:   2018-06-29 00:00:00 +0100
 image: /assets/references-in-bash.jpg
-comments: true
+author: czarnota
 image_pos: center center
 tags:
   - bash
