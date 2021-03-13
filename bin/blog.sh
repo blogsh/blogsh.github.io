@@ -186,7 +186,7 @@ with_layout_default () {
 
             <footer>
                 <div class="copyright">
-                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                    <a href="/uncopyright/" class="about-link">uncopyright</a>
                 </div>
             </footer>
         </div>
@@ -303,40 +303,24 @@ ____EOF
 render_about () {
     with_layout_default <<____EOF
         <div class="about wrapper">
-        <h1>About</h1>
+        <h1>blog.sh</h1>
 
         <p>
-        Hi!
+        A public domain blog about Bash, no copyright, no strings attached.
         </p>
 
         <p>
-        My name is Przemysław Czarnota.
+        This blog is Uncopyrighted. Its authors, have released all claims on copyright and has put all the content of this blog into the public domain.
+
+        No permission is needed to copy, distribute, or modify the content of this site. Credit is appreciated but not required.
         </p>
 
-        <p>
-        I am a software engineer interested in network and game development. 
-        </p>
+        <h4>Terms and Conditions for Copying, Distribution and Modification</h4>
 
-        <p>
-        I prefer building things from scratch and reinventing the wheel, because I believe
-        it to be the best way to create truly unique and exceptional software, that solves
-        problems most efficiently.
+        <ul>
+        <li>0. Do whatever the hell you like.</li>
+        </ul>
         </p>
-
-        <p>
-        I live in Szczecin, Poland.
-        </p>
-
-        <p>
-        You can contact me at <strong>p at czarnota dot io</strong>
-        </p>
-
-        <p>
-        Please keep in mind, that everything I publish here represents strictly my own
-        opinion and does not represent the opinions or views of my employer
-        (nor any other past employers).
-        </p>
-        </div>
 ____EOF
 }
 
@@ -439,11 +423,11 @@ main () {
     (
         local -A PAGE=(
             [target]="about/index.html"
-            [url]="/about/"
+            [url]="/unopyright/"
             [title]="About"
-            [absolute_url]="$PAGE_HTTP_URL/about/"
+            [absolute_url]="$PAGE_HTTP_URL/uncopyright/"
         )
-        render_about | save_as "build/about/index.html"
+        render_about | save_as "build/uncopyright/index.html"
     )
 
     rm -fr build/assets
