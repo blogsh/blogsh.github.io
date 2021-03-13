@@ -450,32 +450,14 @@ main () {
     cp -fr assets build/assets
 
 }
-push () (
-    source .env
 
-    local scp="scp"
-
-    if [[ -n $SERVER_PASSWORD ]]; then
-        export SSHPASS="$SERVER_PASSWORD"
-        scp="sshpass -e scp"
-    fi
-
-    $scp -P "${SERVER_PORT:-22}" \
-        -r build/* \
-        ${SERVER_USER:-$USER}@${SERVER_HOST:-localhost}:public_html/czarnota.io
+publish () (
+    git subtree push --prefix build origin gh-pages
 )
-
-ftppush() {
-    ncftp -p"${JEKYLL_WHERE_PASSWORD}" -u"${JEKYLL_WHERE_USER}" "${JEKYLL_WHERE_SERVER}" <<EOF
-    cd public_html/czarnota.io
-    mput -R _site/*
-EOF
-}
 
 declare -A COMMANDS=(
     [main]=main
-    [push]=push
-    [ftppush]=ftppush
+    [publish]=publish
 )
 
 "${COMMANDS["${1:-main}"]:-${COMMANDS[main]}}" "$@"
