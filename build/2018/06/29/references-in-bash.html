@@ -1,0 +1,297 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>References in Bash | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="References in Bash" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2018/06/29/references-in-bash.html" />
+        <meta property="og:url" content="http://czarnota.io/2018/06/29/references-in-bash.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2018/06/29/references-in-bash.html">References in Bash</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2018/06/29</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>bash</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>Bash 4.3 provides the support for “namerefs”. This is particularly useful to create functions which modify a variable. Yes, you can pass variables by reference in bash! But this feature comes with some hidden gotchas.</p>
+<h2 id="passing-variables-by-reference">Passing variables by reference</h2>
+<p>In other programming languages (eg. <code>c</code>, <code>c++</code>, <code>php</code>), there are ways to pass a variable by a reference</p>
+<p>For example:</p>
+<p>In C there are pointers</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb1-1" title="1"><span class="dt">void</span> increment(<span class="dt">int</span> *a) {</a>
+<a class="sourceLine" id="cb1-2" title="2">    (*a)++;</a>
+<a class="sourceLine" id="cb1-3" title="3">}</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="dt">int</span> main(<span class="dt">void</span>) {</a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="dt">int</span> x = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb1-7" title="7">    increment(&amp;x); <span class="co">/* x gets modified */</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="cf">return</span> <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb1-9" title="9">}</a></code></pre></div>
+<p>C++ has a dedicated reference type</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb2-1" title="1"><span class="dt">void</span> increment(<span class="dt">int</span>&amp; a) {</a>
+<a class="sourceLine" id="cb2-2" title="2">    a++;</a>
+<a class="sourceLine" id="cb2-3" title="3">}</a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="dt">int</span> main(<span class="dt">void</span>) {</a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="dt">int</span> x = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb2-7" title="7">    increment(x); <span class="co">//x gets modified</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="cf">return</span> <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb2-9" title="9">}</a></code></pre></div>
+<p>One day even the php language started to support it</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode php"><code class="sourceCode php"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> increment<span class="ot">(</span>&amp;<span class="kw">$a</span><span class="ot">)</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">$a</span>++<span class="ot">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">}</a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">$x</span> = <span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-6" title="6">increment<span class="ot">(</span><span class="kw">$x</span><span class="ot">);</span> <span class="co">//$x gets modified</span></a></code></pre></div>
+<h2 id="dynamic-scope">Dynamic scope</h2>
+<p>Before we get to passing variables by reference in bash, we should be aware of something that is called the <strong>dynamic scope</strong>.</p>
+<p>In programming languages variables can have a static (lexical) or dynamic scope. Unlike in most languages (c++, c, php, python, ruby, …) where variables have a static scope, variables in bash have the <strong>dynamic scope</strong></p>
+<p>What does it mean? Let’s look at the example:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1"><span class="co">#pseudocode</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="ex">x</span> = 1</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="fu">f ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="ex">print</span> x</a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb4-7" title="7"></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="fu">g ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="ex">var</span> x = 17 <span class="co">#local variable declaration</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="fu">f()</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="fu">f()</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="fu">g()</span></a></code></pre></div>
+<p>If an identifier has a static scope, the object that it is referring to is determined at compile/parsing/interpretation or linking time and is based on its “location” in the program text/bytecode/binary.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="fu">f()</span> <span class="co">#prints 1</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="fu">g()</span> <span class="co">#prints 1</span></a></code></pre></div>
+<p>This means that in the above example when we call <code>g()</code> function, the <code>f()</code> function will print the value of global variable <code>x</code>. Actually it doesn’t matter where the <code>f()</code> is called. The <code>x</code> symbol will be resolved before program is run.</p>
+<p>This is not the case for dynamic scope however.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="fu">f()</span> <span class="co">#prints 1</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="fu">g()</span> <span class="co">#prints 17</span></a></code></pre></div>
+<blockquote>
+<p>With dynamic scope, a global identifier refers to the identifier associated with the most recent environment.</p>
+</blockquote>
+<p>Which means that the <code>x</code> identifier is resolved at run-time. In the above example <code>f()</code> would print <code>1</code>, because in the <strong>most recent environment</strong> the <code>x</code> variable equals <code>1</code>. However the <code>g()</code> would print <code>17</code>, because <code>f()</code> is called in <code>g()</code>, and in this scope <code>f()</code> would refer to <code>x</code> local variable defined by <code>g()</code></p>
+<h2 id="how-to-pass-variables-by-reference-in-bash">How to pass variables by reference in bash</h2>
+<p>Let’s come back to passing variables by reference. Bash has some mechanisms that let you support this behaviour.</p>
+<p>Let’s start with dynamic scope</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="fu">increment ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    <span class="kw">((</span>x++<span class="kw">))</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb7-4" title="4"></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="bu">local</span> <span class="va">x=</span>3</a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="ex">increment</span></a>
+<a class="sourceLine" id="cb7-8" title="8"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb7-9" title="9"></a>
+<a class="sourceLine" id="cb7-10" title="10"><span class="fu">bar ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb7-11" title="11">    <span class="bu">local</span> <span class="va">x=</span>5</a>
+<a class="sourceLine" id="cb7-12" title="12">    <span class="ex">increment</span></a>
+<a class="sourceLine" id="cb7-13" title="13"><span class="kw">}</span></a></code></pre></div>
+<p>Here, thanks to dynamic scope we can call <code>increment</code> function to modify a variable for us. This has obviously one issue - we can only increment variable called <code>x</code></p>
+<p>We need a way to specify which variable from parent scope the <code>increment</code> function should change. So we must do something like this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="fu">increment ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    <span class="kw">((</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span>++<span class="kw">))</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="bu">local</span> <span class="va">x=</span>3</a>
+<a class="sourceLine" id="cb8-7" title="7">    <span class="ex">increment</span> x</a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="kw">}</span></a></code></pre></div>
+<p>Great! This will work. We have passed a variable by reference! This is awesome. But, let’s try another example. A function which will capitalize all letters. This can be easily done with <code>tr</code></p>
+<pre class="console"><code>$ tr &#39;[[:lower:]]&#39; &#39;[[:upper:]]&#39;</code></pre>
+<p>And the function</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" title="1"><span class="fu">capitalize ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">    <span class="co">#here the ${!1} is syntax for $$1 - indirect variable reference</span></a>
+<a class="sourceLine" id="cb10-3" title="3">    <span class="va">$1</span>=<span class="st">&quot;</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;${!1}&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&#39;[[:lower:]]&#39;</span> <span class="st">&#39;[[:upper:]]&#39;</span><span class="va">)</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb10-5" title="5"></a>
+<a class="sourceLine" id="cb10-6" title="6"></a>
+<a class="sourceLine" id="cb10-7" title="7"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb10-8" title="8">    <span class="bu">local</span> <span class="va">hello=</span><span class="st">&quot;hello world&quot;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">    <span class="ex">capitalize</span> hello <span class="co">#pass by reference</span></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$hello</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb10-11" title="11"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb10-12" title="12"></a>
+<a class="sourceLine" id="cb10-13" title="13"><span class="ex">foo</span></a></code></pre></div>
+<p>But this won’t work. It will print</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" title="1"><span class="va">hello=</span>HELLO <span class="ex">WORLD</span>: command not found</a></code></pre></div>
+<p>This is because out capitalize function will try to do this</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="fu">capitalize ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">    <span class="va">hello=</span><span class="st">&quot;HELLO WORLD&quot;</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">}</span></a></code></pre></div>
+<p>And because we used parameter expansion on the left side, bash will consider this as a command and will try to invoke it.</p>
+<p>We can somehow overcome this issue. You have probably already seen the <code>read</code> built in.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" title="1"><span class="bu">read</span> -p <span class="st">&quot;Please provide a name&quot;</span> <span class="va">name</span></a></code></pre></div>
+<p>It is going to read string from standard input into a variable called <code>name</code>. So? How can we use <code>read</code> to pass parameters by reference? Let’s implement the <code>capitalize</code> function again</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" title="1"><span class="fu">capitalize ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">    <span class="va">IFS=</span> <span class="bu">read</span> <span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span> <span class="op">&lt;&lt;&lt;</span> <span class="st">&quot;</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;${!1}&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&#39;[[:lower:]]&#39;</span> <span class="st">&#39;[[:upper:]]&#39;</span><span class="va">)</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="kw">}</span></a></code></pre></div>
+<p>Damn! This looks crazy. Let’s break it up a little bit.</p>
+<ul class="incremental">
+<li><code>$1</code> is the first argument - here the name of variable passed by reference</li>
+<li><code>${!1}</code> is the value of variable passed by reference</li>
+<li><code>$(echo "${!1}" | tr '[[:lower:]]' '[[:upper:]]')</code> - passes the value of the variable on <code>tr</code> stdin, which will change all lowercase character to uppercase and print the result on stdout</li>
+<li><code>&lt;&lt;&lt;</code> is the HERESTRING syntax, which will pass the string on right side the stdin of <code>read</code> builtin.</li>
+<li><code>IFS=</code> is the internal field separator, it is set to <code>""</code> to prevent <code>read</code> from stripping whitespace</li>
+</ul>
+<p>Note that we can’t just pipe the <code>tr</code> output to <code>read</code> like this:</p>
+<pre><code>echo ${!1} | tr &#39;[[:lower:]]&#39; &#39;[[:upper:]]&#39; | read &quot;$1&quot;</code></pre>
+<p>because each command in pipeline is executed in a subshell, thus <code>read</code> would be unable to modify our environment, because it would be called in a child process.</p>
+<p>Anyway our capitalize function works</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb16-1" title="1"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">    <span class="bu">local</span> <span class="va">hello=</span><span class="st">&quot;hello world&quot;</span></a>
+<a class="sourceLine" id="cb16-3" title="3">    <span class="ex">capitalize</span> hello <span class="co">#pass by reference</span></a>
+<a class="sourceLine" id="cb16-4" title="4">    <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$hello</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb16-6" title="6"></a>
+<a class="sourceLine" id="cb16-7" title="7"><span class="ex">foo</span> <span class="co">#prints HELLO WORLD</span></a></code></pre></div>
+<p>Turns out we don’t even need the <code>read</code> function. Bash 4.3 introduced support for “namerefs” which is exactly what we need to make our solution less hacky.</p>
+<p>From bash manual:</p>
+<blockquote>
+<p>Whenever the nameref variable is referenced, assigned to, unset, or has its attributes modified (other than using or changing the nameref attribute itself), the operation is actually performed on the variable specified by the nameref variable’s value. A nameref is commonly used within shell functions to refer to a variable whose name is passed as an argument to the function.</p>
+</blockquote>
+<p>In practice this means that:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" title="1"><span class="va">x=</span>1</a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="bu">declare</span> -n <span class="va">ref_x=</span>x</a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="co">#from now on all operations on ref_x will be performed on x</span></a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="va">ref_x=</span>hello</a>
+<a class="sourceLine" id="cb17-5" title="5"><span class="bu">echo</span> <span class="va">$x</span> <span class="co">#prints hello</span></a>
+<a class="sourceLine" id="cb17-6" title="6"><span class="bu">echo</span> <span class="va">$ref_x</span> <span class="co">#prints hello</span></a></code></pre></div>
+<p>This means can use namerefs in our <code>capitalize</code> function instead of <code>read</code>!</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb18-1" title="1"><span class="fu">capitalize ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb18-2" title="2">    <span class="bu">local</span> -n <span class="va">_ref=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb18-3" title="3">    <span class="va">_ref=</span><span class="st">&quot;</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$_ref</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&#39;[[:lower:]]&#39;</span> <span class="st">&#39;[[:upper:]]&#39;</span><span class="va">)</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb18-5" title="5"></a>
+<a class="sourceLine" id="cb18-6" title="6"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb18-7" title="7">    <span class="bu">local</span> <span class="va">hello=</span><span class="st">&quot;hello world&quot;</span></a>
+<a class="sourceLine" id="cb18-8" title="8">    <span class="ex">capitalize</span> hello <span class="co">#pass by reference</span></a>
+<a class="sourceLine" id="cb18-9" title="9">    <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$hello</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb18-10" title="10"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb18-11" title="11"></a>
+<a class="sourceLine" id="cb18-12" title="12"><span class="ex">foo</span> <span class="co">#prints HELLO WORLD</span></a></code></pre></div>
+<p>In my opinion, it is less magical than the <code>read</code> example.</p>
+<p>One thing which namerefs have that <code>read</code> does not is natural support for arrays</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb19-1" title="1"><span class="fu">append ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb19-2" title="2">    <span class="bu">local</span> -n <span class="va">_ref=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span>; <span class="bu">shift</span> <span class="kw">||</span> <span class="bu">return</span></a>
+<a class="sourceLine" id="cb19-3" title="3">    <span class="va">_ref+=(</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span><span class="va">)</span></a>
+<a class="sourceLine" id="cb19-4" title="4"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb19-5" title="5"></a>
+<a class="sourceLine" id="cb19-6" title="6"><span class="fu">main ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb19-7" title="7">    <span class="bu">local</span> -a <span class="va">numbers=(</span>1 2 3<span class="va">)</span></a>
+<a class="sourceLine" id="cb19-8" title="8">    <span class="ex">append</span> numbers 4</a>
+<a class="sourceLine" id="cb19-9" title="9">    <span class="ex">append</span> numbers 5</a>
+<a class="sourceLine" id="cb19-10" title="10">    <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">${numbers[@]}</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb19-11" title="11"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb19-12" title="12"></a>
+<a class="sourceLine" id="cb19-13" title="13"><span class="ex">main</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a></code></pre></div>
+<h2 id="caveats">Caveats</h2>
+<p>The first problem can occur when the callee uses the same variable name for nameref as the variable passed by reference</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb20-1" title="1"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb20-2" title="2">    <span class="bu">local</span> <span class="va">foo=</span>5</a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="ex">increment</span> foo</a>
+<a class="sourceLine" id="cb20-4" title="4"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb20-5" title="5"></a>
+<a class="sourceLine" id="cb20-6" title="6"><span class="fu">increment ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb20-7" title="7">    <span class="bu">local</span> -n <span class="va">foo=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span> <span class="co">#this expands to foo=foo and will cause circular reference</span></a>
+<a class="sourceLine" id="cb20-8" title="8">    <span class="kw">((</span>foo++<span class="kw">))</span></a>
+<a class="sourceLine" id="cb20-9" title="9"><span class="kw">}</span></a></code></pre></div>
+<p>When this situation occurs, bash will report an error.</p>
+<p>Another problem can occur if the function uses local variable with the same name as the variable passed by reference</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb21-1" title="1"><span class="fu">change ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb21-2" title="2">    <span class="bu">local</span> -n <span class="va">ref=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb21-3" title="3">    <span class="bu">local</span> <span class="va">x</span></a>
+<a class="sourceLine" id="cb21-4" title="4">    <span class="va">ref=</span>1 <span class="co">#this will just change the local x from this function</span></a>
+<a class="sourceLine" id="cb21-5" title="5"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb21-6" title="6"></a>
+<a class="sourceLine" id="cb21-7" title="7"><span class="fu">foo ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb21-8" title="8">    <span class="bu">local</span> <span class="va">x</span></a>
+<a class="sourceLine" id="cb21-9" title="9">    <span class="ex">change</span> x <span class="co">#x will be unchanged</span></a>
+<a class="sourceLine" id="cb21-10" title="10"><span class="kw">}</span></a></code></pre></div>
+<p>This is due to the fact that namerefs, as the name suggests, operate on variable names and those can easily overlap. The only solution to this problem is to limit the amount of local variables in functions that use namerefs and prefix the namerefs with so many <code>_</code> that can fit on the screen.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb22-1" title="1"><span class="fu">increment ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb22-2" title="2">    <span class="bu">local</span> -n <span class="va">_______________________________________________ref=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb22-3" title="3">    <span class="kw">((</span>_______________________________________________ref++<span class="kw">))</span></a>
+<a class="sourceLine" id="cb22-4" title="4"><span class="kw">}</span></a></code></pre></div>
+<p>Just kidding. One <code>_</code> will do.</p>
+<h2 id="summary">Summary</h2>
+<p>Thanks to dynamic scope of variables and namerefs, we can pass variables by reference. in bash. This feature however comes with some caveats, so be careful.</p></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                <div>Next post</div>
+<a href=/2018/07/12/building-livereload-with-bash.html>Building a LiveReload with bash</a>
+                </div>
+                <div class="next-post">
+                <div>Previous post</div>
+<a href=/2018/04/28/resize-many-photos-with-the-command-line.html>Resize many images with the command line</a>
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2018/06/29/references-in-bash.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>

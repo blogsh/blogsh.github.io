@@ -1,0 +1,184 @@
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0276f6">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <title>Multiline strings in Bash - the cool way | Czarnota</title>
+
+        <meta name="generator" content="blog.sh" />
+        <meta property="og:title" content="Multiline strings in Bash - the cool way" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="description" content="Interesting things about software engineering" />
+        <meta property="og:description" content="Interesting things about software engineering" />
+
+        <link rel="canonical" href="http://czarnota.io/2020/01/09/multiline-strings-in-bash-the-cool-way.html" />
+        <meta property="og:url" content="http://czarnota.io/2020/01/09/multiline-strings-in-bash-the-cool-way.html" />
+
+        <meta property="og:site_name" content="Czarnota" />
+        <link rel="next" href="http://czarnota.io/page/2/index.html" />
+        <script type="application/ld+json">
+        {"@type":"WebSite","url":"http://czarnota.io/","headline":"Czarnota","description":"Interesting things about software engineering","name":"Czarnota","@context":"http://schema.org"}</script>
+          <link rel="stylesheet" href="/assets/main.css">
+         <link rel="icon" type="image/png" href="/assets/favicon.ico">
+      </head>
+      <body>
+        <div class="content">
+            <main aria-label="Content">
+                    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+            <div class="post post-full">
+          <div class="wrapper post-img-wrapper">
+          <div class="post-header-wrapper">
+            <header class="post-header">
+
+            <h1 class="post-h">
+
+            <a class="post-link" href="/2020/01/09/multiline-strings-in-bash-the-cool-way.html">Multiline strings in Bash - the cool way</a>
+
+            </h1>
+
+            <div class="post-meta">
+                <span>2020/01/09</span>
+                <span class="post-tags">
+                <a class=post-tag href=#>bash</a>
+                </span>
+            </div>
+
+            </header>
+          </div>
+        </div>
+
+
+        <div class="wrapper">
+
+        <div class="post-content"><p>Bash supports multiline strings using heredoc syntax. They are extremely useful if you want to embed other programming language code in a Bash script.</p>
+<p>For example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="fu">cat</span> <span class="op">&lt;&lt; EOF</span></a>
+<a class="sourceLine" id="cb1-2" title="2">import os</a>
+<a class="sourceLine" id="cb1-3" title="3">print(os.getcwd())</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">EOF</span></a></code></pre></div>
+<p>Will output</p>
+<pre><code>import os
+print(os.getcwd())</code></pre>
+<p>This is working and cool, but has one little limitation.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="co"># test.sh</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="fu">cat</span> <span class="op">&lt;&lt; EOF</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    import os</a>
+<a class="sourceLine" id="cb3-5" title="5">    print(os.getcwd())</a>
+<a class="sourceLine" id="cb3-6" title="6">    EOF</a>
+<a class="sourceLine" id="cb3-7" title="7">}</a>
+<a class="sourceLine" id="cb3-8" title="8">python_code</a></code></pre></div>
+<p>Doesn’t work.</p>
+<pre class="console"><code>$ bash test.sh
+test.sh: line 9: warning: here-document at line 4 delimited by end-of-file (wanted `EOF&#39;)
+test.sh: line 10: syntax error: unexpected end of file</code></pre>
+<p>You can’t indent code. You need to do this instead:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="co"># test.sh</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="fu">cat</span> <span class="op">&lt;&lt; EOF</span></a>
+<a class="sourceLine" id="cb5-4" title="4">import os</a>
+<a class="sourceLine" id="cb5-5" title="5">print(os.getcwd())</a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="op">EOF</span></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="ex">python_code</span></a></code></pre></div>
+<p>This works, but looks ugly. It is a known problem - indentation is not supported by heredoc.</p>
+<p>The simplest solution is just not to use indentation and be done with the problem, after all, we developers have so many problems to fix, and the deadlines are just around the corner. Nevertheless for some of us the readability is worth fighting for. So let’s fight!</p>
+<p>But hola, amigo - not so fast. Heredoc supports indentation and you are lying! See?</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="co"># test.sh</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="fu">cat</span> <span class="op">&lt;&lt;- EOF</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    import os</a>
+<a class="sourceLine" id="cb6-5" title="5">    print(os.getcwd())</a>
+<a class="sourceLine" id="cb6-6" title="6">    EOF</a>
+<a class="sourceLine" id="cb6-7" title="7">}</a>
+<a class="sourceLine" id="cb6-8" title="8">python_code</a></code></pre></div>
+<p>Well, yes. There is <code>&lt;&lt;-</code> operator which enables the indentation, but it has one limitation - You must use tabs to indent. Doesn’t work with spaces. So lame.</p>
+<p>So unless you indent your bash scripts with tabs - you are out of luck. (you can always commit the sin of mixed indentation, but you didn’t hear that from me)</p>
+<p>Now those who believe that tabs &gt; spaces can stop reading, go back to work and start solving real domain problems.</p>
+<p>We poor “space” souls must stay and fix this indentation issue.</p>
+<h2 id="fixing-the-situation-a-bit">Fixing the situation a bit</h2>
+<p>Personally i like to visually simulate the indentation.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># test.sh</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="fu">cat</span> <span class="op">&lt;&lt; &quot;</span>    <span class="ex">EOF</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="st">    import os</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="st">    print(&quot;</span>Hello world<span class="st">&quot;)</span></a>
+<a class="sourceLine" id="cb7-6" title="6"><span class="st">    EOF</span></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="st">}</span></a>
+<a class="sourceLine" id="cb7-8" title="8"><span class="st">python_code</span></a></code></pre></div>
+<p>Looks good enough. But here we are introducing one problem. Look:</p>
+<pre class="console"><code>$ bash test.sh
+    import os
+    print(&quot;Hello world&quot;)</code></pre>
+<p>Now we output unecessary indentation and here for example this python code won’t work.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="ex">python3</span> <span class="op">&lt;(</span><span class="ex">python_code</span><span class="op">)</span></a></code></pre></div>
+<pre><code>  File &quot;/dev/fd/63&quot;, line 1
+    import os
+    ^
+IndentationError: unexpected indent</code></pre>
+<p>Oh no! What to do? Let us increase the level of insanity and “deindent” this code with <code>sed</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" title="1"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb11-2" title="2">    <span class="fu">sed</span> -r <span class="st">&#39;s/^.{4}//&#39;</span> <span class="op">&lt;&lt; &quot;</span>    <span class="ex">EOF</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="st">    import os</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="st">    print(&quot;</span>Hello world<span class="st">&quot;)</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="st">    EOF</span></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="st">}</span></a></code></pre></div>
+<p>Voila! We even add an extra level if we want to:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">    <span class="fu">sed</span> -r <span class="st">&#39;s/^.{8}//&#39;</span> <span class="op">&lt;&lt; &quot;</span>    <span class="ex">EOF</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="st">        import os</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="st">        print(&quot;</span>Hello world<span class="st">&quot;)</span></a>
+<a class="sourceLine" id="cb12-5" title="5"><span class="st">    EOF</span></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="st">}</span></a></code></pre></div>
+<p>Also let’s make this <code>sed</code> a little bit less scary.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" title="1"><span class="fu">deindent ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb13-2" title="2">    <span class="fu">sed</span> -r <span class="st">&#39;s/^.{8}//&#39;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="fu">python_code ()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb13-6" title="6">    <span class="ex">deindent</span> <span class="op">&lt;&lt; &quot;</span>    <span class="ex">EOF</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="st">        import os</span></a>
+<a class="sourceLine" id="cb13-8" title="8"><span class="st">        print(&quot;</span>Hello world<span class="st">&quot;)</span></a>
+<a class="sourceLine" id="cb13-9" title="9"><span class="st">    EOF</span></a>
+<a class="sourceLine" id="cb13-10" title="10"><span class="st">}</span></a></code></pre></div>
+<p>That was hacky. Is there a better way? Let me know.</p></div>
+
+        <div class="navigation">
+            <div>
+                <div class="prev-post">
+                <div>Next post</div>
+<a href=/2020/01/11/listing-all-todo-comments.html>Listing all TODO comments</a>
+                </div>
+                <div class="next-post">
+                <div>Previous post</div>
+<a href=/2019/02/12/implementing-dynamic-array-in-one-line-of-code.html>Implementing a dynamic array in a single line of code</a>
+                </div>
+                <div class="cf"></div>
+            </div>
+
+            <div class="all-posts-link">
+                <a href="/">[see all posts]</a>
+            </div>
+        </div>
+        </div>
+    </div>
+        <a class="u-url" href="//2020/01/09/multiline-strings-in-bash-the-cool-way.html" hidden></a>
+    </article>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    uncopyright :: <a href="/about/" class="about-link">about</a>
+                </div>
+            </footer>
+        </div>
+
+      </body>
+
+    </html>
