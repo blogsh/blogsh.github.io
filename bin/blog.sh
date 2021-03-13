@@ -62,12 +62,8 @@ render_post () {
 
             <div class="post-meta">
                 <span>$(echo ${post[date]} | format_date)</span>
-                <span class="post-tags">
-                $(
-                    for tag in ${post[tags]}; do
-                        echo "<a class="post-tag" href="#">$tag</a>"
-                    done
-                )
+                <span class="post-author">
+                    by ${post[author]}
                 </span>
             </div>
 
