@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 PAGE_HTTP_URL="http://blogsh.github.io"
+DESCRIPTION="A public domain blog about Bash"
 
 ENOENT=2
 
@@ -137,16 +138,15 @@ with_layout_default () {
         <meta property="og:title" content="${PAGE[title]:-blog.sh}" />
         <meta property="og:locale" content="en_US" />
 
-        <meta name="description" content="${page[description]:-A public domain blog about Bash}" />
-        <meta property="og:description" content="${page[description]:-A public domain blog about Bash}" />
+        <meta name="description" content="${page[description]:-$DESCRIPTION}" />
+        <meta property="og:description" content="${page[description]:-$DESCRIPTION}" />
 
         <link rel="canonical" href="${PAGE[absolute_url]}" />
         <meta property="og:url" content="${PAGE[absolute_url]}" />
 
         <meta property="og:site_name" content="blog.sh" />
-        <link rel="next" href="http://blogsh.github.io/page/2/index.html" />
         <script type="application/ld+json">
-        {"@type":"WebSite","url":"http://blogsh.github.io/","headline":"blog.sh","description":"A public domain blog about Bash","name":"blog.sh","@context":"http://schema.org"}</script>
+        {"@type":"WebSite","url":"http://blogsh.github.io/","headline":"blog.sh","description":"$DESCRIPTION","name":"blog.sh","@context":"http://schema.org"}</script>
           <link rel="stylesheet" href="/assets/main.css">
          <link rel="icon" type="image/png" href="/assets/favicon.ico">
       </head>
@@ -260,7 +260,7 @@ render_archives () {
     with_layout_default <<____EOF
         <div class="wrapper">
             <h1 class="all-posts-h">blog.sh</h1>
-            <span class="all-posts-about">A public domain blog about Bash</span>
+            <span class="all-posts-about">$DESCRIPTION</span>
             <ul class="all-posts">
                 $(
                     for i in ${page_numbers[@]}; do
@@ -278,7 +278,7 @@ render_about () {
         <div class="about wrapper">
         <h1 class="all-posts-h">blog.sh</h1>
         <span class="all-posts-about">
-        A public domain blog about Bash
+        $DESCRIPTION
         </span>
 
         <p>

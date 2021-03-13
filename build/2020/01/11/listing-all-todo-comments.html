@@ -21,7 +21,6 @@
         <meta property="og:url" content="http://blogsh.github.io/2020/01/11/listing-all-todo-comments.html" />
 
         <meta property="og:site_name" content="blog.sh" />
-        <link rel="next" href="http://blogsh.github.io/page/2/index.html" />
         <script type="application/ld+json">
         {"@type":"WebSite","url":"http://blogsh.github.io/","headline":"blog.sh","description":"A public domain blog about Bash","name":"blog.sh","@context":"http://schema.org"}</script>
           <link rel="stylesheet" href="/assets/main.css">
@@ -58,7 +57,7 @@
 
         <div class="post-content"><p>TODO comments are a simple, yet a very effective way of maintaining a list of tasks in a project.</p>
 <p>Below you can see an example of a TODO comment:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb1-1" title="1"><span class="co">/* </span><span class="al">TODO</span><span class="co">: Read this setting from the driver instead of hardcoding it */</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* </span><span class="al">TODO</span><span class="co">: Read this setting from the driver instead of hardcoding it */</span></span></code></pre></div>
 <p>Although they can’t replace a full-featured issue tracker like <a href="https://www.atlassian.com/software/jira">Jira</a> or even a simple issue list like the one offered by <a href="https://github.com">Github</a>, they have one feature that these tools do not.</p>
 <p>TODO comments are stored next to the code - so when the code is changed, then the associated TODO comment will most likely also be updated (or completely removed) by the developer, who edited the related code. Tickets in the issue tracker have to be manually synchronised with the current state of the project (<a href="https://www.agilealliance.org/glossary/backlog-grooming/">backlog refinement</a>).</p>
 <p>Placing project requirements in TODO comments is, of course, not a wise decision, but I think they are the perfect place for tasks that are strictly related to the code. Maintenance, removal of “temporary” workarounds, refactorings, are good examples of tasks that are often too small to deserve a dedicated ticket in the issue tracker.</p>
@@ -88,52 +87,52 @@ $ rg -io &quot;(TODO|FIXME).*&quot;</code></pre>
 <p>So now we have 3 tools that we can use. Which one to use?</p>
 <p>Whatever is available!</p>
 <p>Let’s create a script that will check if a tool is available and choose the best one.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="co">#!/usr/bin/env bash</span></a>
-<a class="sourceLine" id="cb6-2" title="2"></a>
-<a class="sourceLine" id="cb6-3" title="3"><span class="va">PATTERN=</span><span class="st">&quot;(TODO|FIXME).*&quot;</span></a>
-<a class="sourceLine" id="cb6-4" title="4"></a>
-<a class="sourceLine" id="cb6-5" title="5"><span class="fu">rg_todo ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-6" title="6">    <span class="ex">rg</span> -io <span class="st">&quot;</span><span class="va">$PATTERN</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a>
-<a class="sourceLine" id="cb6-7" title="7"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-8" title="8"></a>
-<a class="sourceLine" id="cb6-9" title="9"><span class="fu">rg_has ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-10" title="10">    <span class="bu">hash</span> rg</a>
-<a class="sourceLine" id="cb6-11" title="11"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-12" title="12"></a>
-<a class="sourceLine" id="cb6-13" title="13"><span class="fu">ag_todo ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-14" title="14">    <span class="ex">ag</span> -io <span class="st">&quot;</span><span class="va">$PATTERN</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a>
-<a class="sourceLine" id="cb6-15" title="15"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-16" title="16"></a>
-<a class="sourceLine" id="cb6-17" title="17"><span class="fu">ag_has ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-18" title="18">    <span class="bu">hash</span> rg</a>
-<a class="sourceLine" id="cb6-19" title="19"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-20" title="20"></a>
-<a class="sourceLine" id="cb6-21" title="21"><span class="fu">grep_todo ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-22" title="22">    <span class="fu">grep</span> -r -ioE <span class="st">&quot;</span><span class="va">$PATTERN</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span> .</a>
-<a class="sourceLine" id="cb6-23" title="23"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-24" title="24"></a>
-<a class="sourceLine" id="cb6-25" title="25"><span class="fu">grep_has ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-26" title="26">    <span class="bu">hash</span> grep</a>
-<a class="sourceLine" id="cb6-27" title="27"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-28" title="28"></a>
-<a class="sourceLine" id="cb6-29" title="29"><span class="va">TOOLS=(</span></a>
-<a class="sourceLine" id="cb6-30" title="30">    <span class="ex">rg</span> <span class="co"># ripgrep is the fastest</span></a>
-<a class="sourceLine" id="cb6-31" title="31">    <span class="ex">ag</span> <span class="co"># The Silver Searcher is a little slower than rg</span></a>
-<a class="sourceLine" id="cb6-32" title="32">    <span class="fu">grep</span> <span class="co"># Use grep is available almost everywhere</span></a>
-<a class="sourceLine" id="cb6-33" title="33">)</a>
-<a class="sourceLine" id="cb6-34" title="34"></a>
-<a class="sourceLine" id="cb6-35" title="35"><span class="fu">main ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-36" title="36">    <span class="kw">for</span> <span class="ex">tool</span> in <span class="st">&quot;</span><span class="va">${TOOLS[@]}</span><span class="st">&quot;</span><span class="kw">;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-37" title="37">        <span class="co"># If the tool is available</span></a>
-<a class="sourceLine" id="cb6-38" title="38">        <span class="kw">if</span> <span class="va">${tool}</span><span class="ex">_has</span><span class="kw">;</span> <span class="kw">then</span></a>
-<a class="sourceLine" id="cb6-39" title="39">            <span class="co"># List TODOs</span></a>
-<a class="sourceLine" id="cb6-40" title="40">            <span class="va">${tool}</span><span class="ex">_todo</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a>
-<a class="sourceLine" id="cb6-41" title="41">            <span class="bu">return</span></a>
-<a class="sourceLine" id="cb6-42" title="42">        <span class="kw">fi</span></a>
-<a class="sourceLine" id="cb6-43" title="43">    <span class="kw">done</span></a>
-<a class="sourceLine" id="cb6-44" title="44"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-45" title="45"></a>
-<a class="sourceLine" id="cb6-46" title="46"><span class="ex">main</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env bash</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="va">PATTERN=</span><span class="st">&quot;(TODO|FIXME).*&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rg_todo ()</span> <span class="kw">{</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="ex">rg</span> -io <span class="st">&quot;</span><span class="va">$PATTERN</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">rg_has ()</span> <span class="kw">{</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">hash</span> rg</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ag_todo ()</span> <span class="kw">{</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">ag</span> -io <span class="st">&quot;</span><span class="va">$PATTERN</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">ag_has ()</span> <span class="kw">{</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">hash</span> rg</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="fu">grep_todo ()</span> <span class="kw">{</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grep</span> -r -ioE <span class="st">&quot;</span><span class="va">$PATTERN</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span> .</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="fu">grep_has ()</span> <span class="kw">{</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">hash</span> grep</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="va">TOOLS=(</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    <span class="ex">rg</span> # ripgrep is the fastest</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    <span class="ex">ag</span> # The Silver Searcher is a little slower than rg</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grep</span> <span class="co"># Use grep is available almost everywhere</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="fu">main ()</span> <span class="kw">{</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="ex">tool</span> in <span class="st">&quot;</span><span class="va">${TOOLS[@]}</span><span class="st">&quot;</span><span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>        <span class="co"># If the tool is available</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="va">${tool}</span><span class="ex">_has</span><span class="kw">;</span> <span class="kw">then</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>            <span class="co"># List TODOs</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>            <span class="va">${tool}</span><span class="ex">_todo</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            <span class="bu">return</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>        <span class="kw">fi</span></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">done</span></span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a><span class="ex">main</span> <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></span></code></pre></div>
 <p>Now we can list the TODO’s in our code using <code>rg</code>, <code>ag</code> or <code>grep</code> - whatever is installed. You can even easily extend the script to add a support for a new search tool.</p>
 <p>Let’s call the script <code>todo</code> and put it in some directory in your <code>$PATH</code>.</p>
 <p>Then you can just type:</p>
