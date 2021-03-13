@@ -471,7 +471,14 @@ blockquote:after {
   display: block;
   width: 100%;
   line-height: 1em;
-  font-weight: normal; }
+  font-weight: normal;
+  margin-bottom: 0;
+}
+
+.all-posts-about {
+  margin-bottom: 1em;
+  display: block;
+}
 
 .all-posts {
   list-style: none;
