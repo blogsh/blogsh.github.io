@@ -155,14 +155,14 @@ with_layout_default () {
 
         $(
             if [[ -z ${PAGE[title]} ]]; then
-                echo "<title>Blog.sh | A public domain blog about Bash</title>"
+                echo "<title>blog.sh | A public domain blog about Bash</title>"
             else
-                echo "<title>${PAGE[title]} | Blog.sh</title>"
+                echo "<title>${PAGE[title]} | blog.sh</title>"
             fi
         )
 
         <meta name="generator" content="blog.sh" />
-        <meta property="og:title" content="${PAGE[title]:-Blog.sh}" />
+        <meta property="og:title" content="${PAGE[title]:-blog.sh}" />
         <meta property="og:locale" content="en_US" />
 
         <meta name="description" content="${page[description]:-A public domain blog about Bash}" />
@@ -171,10 +171,10 @@ with_layout_default () {
         <link rel="canonical" href="${PAGE[absolute_url]}" />
         <meta property="og:url" content="${PAGE[absolute_url]}" />
 
-        <meta property="og:site_name" content="Blog.sh" />
+        <meta property="og:site_name" content="blog.sh" />
         <link rel="next" href="http://blogsh.github.io/page/2/index.html" />
         <script type="application/ld+json">
-        {"@type":"WebSite","url":"http://blogsh.github.io/","headline":"Blog.sh","description":"A public domain blog about Bash","name":"Blog.sh","@context":"http://schema.org"}</script>
+        {"@type":"WebSite","url":"http://blogsh.github.io/","headline":"blog.sh","description":"A public domain blog about Bash","name":"blog.sh","@context":"http://schema.org"}</script>
           <link rel="stylesheet" href="/assets/main.css">
          <link rel="icon" type="image/png" href="/assets/favicon.ico">
       </head>
@@ -287,7 +287,7 @@ paginate () {
 render_archives () {
     with_layout_default <<____EOF
         <div class="wrapper">
-            <h1 class="all-posts-h">Blog posts</h1>
+            <h1 class="all-posts-h">blog.sh</h1>
             <ul class="all-posts">
                 $(
                     for i in ${page_numbers[@]}; do
